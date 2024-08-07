@@ -9,6 +9,9 @@ media
 # Collected static files
 staticfiles/
 
+#test file settings
+watchrate/test_settings.py
+
 # Backup files # 
 *.bak 
 
