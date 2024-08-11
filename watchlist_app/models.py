@@ -14,7 +14,9 @@ class Watchlist(models.Model):
     description =  models.CharField(max_length=200)
     active = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now_add=True)
-    platforms = models.ManyToManyField(StreamPlatform, related_name="watchlists", blank=True)
+    platforms = models.ForeignKey("StreamPlatform", verbose_name=(""), on_delete=models.CASCADE, 
+                                  null=True, related_name="watchlist")
+    #platforms = models.ManyToManyField(StreamPlatform, related_name="watchlists", blank=True)
 
     def __str__(self):
         return self.title
