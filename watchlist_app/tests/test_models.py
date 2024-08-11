@@ -1,13 +1,21 @@
+from django.core.exceptions import ValidationError
 from django.test import TestCase
-from watchlist_app.models import Watchlist
+from watchlist_app.models import StreamPlatform, Watchlist
 
-class MovieModelTest(TestCase):
+
+class WatchlistModelTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        StreamPlatform.objects.create(name="Netflix",
+                                      url="https://www.netflix.com",
+                                      about="Streaming service")
+
     @classmethod
     def setUpTestData(cls):
         # Create a movie object for use in all test methods
         Watchlist.objects.create(title="Inception",
-                                 genre="Action", 
-                                 description="A thief who steals corporate secrets through the use of dream-sharing technology.", 
+                                 genre="Action",
+                                 description="A thief who steals corporate secrets through the use of dream-sharing technology.",
                                  active=True)
 
     def test_movie_content(self):

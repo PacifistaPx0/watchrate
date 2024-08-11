@@ -1,19 +1,18 @@
 from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
-from watchlist_app.models import Watchlist, StreamPlatform
-from watchlist_app.api.serializers import WatchlistSerializer, StreamPlatformSerializer
-
+from rest_framework import status, generics
+from watchlist_app.models import Watchlist, StreamPlatform, Review
+from watchlist_app.api.serializers import WatchlistSerializer, StreamPlatformSerializer, ReviewSerializer
 
 class MovieList(APIView):
     def get(self, request):
         movies = Watchlist.objects.all()
-        serializer = WatchlistSerializer(movies, many=True)
+        serializer = WatchlistSerializer(movies, many=True, context={'request': request})
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = WatchlistSerializer(data=request.data)
+        serializer = WatchlistSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -21,8 +20,6 @@ class MovieList(APIView):
 
 
 class MovieDetail(APIView):
-    from django.http import Http404
-
     def get_object(self, pk):
         try:
             return Watchlist.objects.get(pk=pk)
@@ -30,41 +27,32 @@ class MovieDetail(APIView):
             raise Http404
 
     def get(self, request, pk):
-        try:
-            movie = self.get_object(pk)
-        except Http404:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-        serializer = WatchlistSerializer(movie)
+        movie = self.get_object(pk)
+        serializer = WatchlistSerializer(movie, context={'request': request})
         return Response(serializer.data)
 
     def put(self, request, pk):
-        try:
-            movie = self.get_object(pk)
-        except Http404:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-        serializer = WatchlistSerializer(movie, data=request.data)
+        movie = self.get_object(pk)
+        serializer = WatchlistSerializer(movie, data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        try:
-            movie = self.get_object(pk)
-        except Http404:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+        movie = self.get_object(pk)
         movie.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class StreamPlatformAV(APIView):
+class StreamPlatformList(APIView):
     def get(self, request):
-        platform = StreamPlatform.objects.all()
-        serializer = StreamPlatformSerializer(platform, many=True)
+        platforms = StreamPlatform.objects.all()
+        serializer = StreamPlatformSerializer(platforms, many=True, context={'request': request})
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = StreamPlatformSerializer(data=request.data)
+        serializer = StreamPlatformSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -79,28 +67,27 @@ class StreamPlatformDetail(APIView):
             raise Http404
 
     def get(self, request, pk):
-        try:
-            platform = self.get_object(pk)
-        except Http404:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-        serializer = StreamPlatformSerializer(platform)
+        platform = self.get_object(pk)
+        serializer = StreamPlatformSerializer(platform, context={'request': request})
         return Response(serializer.data)
 
     def put(self, request, pk):
-        try:
-            platform = self.get_object(pk)
-        except Http404:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-        serializer = StreamPlatformSerializer(platform, data=request.data)
+        platform = self.get_object(pk)
+        serializer = StreamPlatformSerializer(platform, data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        try:
-            platform = self.get_object(pk)
-        except Http404:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+        platform = self.get_object(pk)
         platform.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class ReviewList(generics.ListCreateAPIView):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
+
+class ReviewDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer

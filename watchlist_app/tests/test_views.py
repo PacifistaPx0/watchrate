@@ -1,6 +1,6 @@
 from rest_framework.test import APITestCase
 from rest_framework import status
-from watchlist_app.models import Watchlist
+from watchlist_app.models import Watchlist, StreamPlatform
 from django.urls import reverse
 
 class MovieAPITest(APITestCase):
@@ -40,3 +40,19 @@ class MovieAPITest(APITestCase):
     def test_delete_movie(self):
         response = self.client.delete(reverse('movie-detail', kwargs={'pk': 1}))
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+class StreamPlatformAPITest(APITestCase):
+    def test_get_all_stream_platforms_without_existing_platforms(self):
+        # Get API response
+        response = self.client.get(reverse('stream-platform-list'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 0)
+
+    def test_put_invalid_stream_platform(self):
+        data = {"name": "New Platform", "url": "https://newplatform.com"}
+        response = self.client.put(reverse('stream-platform-detail', kwargs={'pk': 30}), data)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_delete_non_existent_stream_platform(self):
+        response = self.client.delete(reverse('stream-platform-detail', kwargs={'pk': 30}))
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
