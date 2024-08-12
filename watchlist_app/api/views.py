@@ -4,6 +4,26 @@ from rest_framework.response import Response
 from rest_framework import status, generics
 from watchlist_app.models import Watchlist, StreamPlatform, Review
 from watchlist_app.api.serializers import WatchlistSerializer, StreamPlatformSerializer, ReviewSerializer
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+
+class ReviewList(generics.ListCreateAPIView):
+    serializer_class = ReviewSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        movie_id = self.kwargs['movie_id']
+        return Review.objects.filter(movie_id=movie_id)
+
+    def perform_create(self, serializer):
+        movie_id = self.kwargs['movie_id']
+        movie = Watchlist.objects.get(id=movie_id)
+        serializer.save(movie=movie)
+
+class ReviewDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
 
 class MovieList(APIView):
     def get(self, request):
@@ -44,8 +64,22 @@ class MovieDetail(APIView):
         movie.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+class StreamPlatformList(generics.ListCreateAPIView):
+    queryset = StreamPlatform.objects.all()
+    serializer_class = StreamPlatformSerializer
 
-class StreamPlatformList(APIView):
+    def get_serializer_context(self):
+        return {'request': self.request}
+
+
+class StreamPlatformDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = StreamPlatform.objects.all()
+    serializer_class = StreamPlatformSerializer
+
+    def get_serializer_context(self):
+        return {'request': self.request}
+
+""" class StreamPlatformList(APIView):
     def get(self, request):
         platforms = StreamPlatform.objects.all()
         serializer = StreamPlatformSerializer(platforms, many=True, context={'request': request})
@@ -84,10 +118,4 @@ class StreamPlatformDetail(APIView):
         platform.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-class ReviewList(generics.ListCreateAPIView):
-    queryset = Review.objects.all()
-    serializer_class = ReviewSerializer
-
-class ReviewDetail(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Review.objects.all()
-    serializer_class = ReviewSerializer
+ """

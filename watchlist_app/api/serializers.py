@@ -3,9 +3,14 @@ from watchlist_app.models import Watchlist, StreamPlatform, Review
 
 
 class ReviewSerializer(serializers.HyperlinkedModelSerializer):
+    movie = serializers.HyperlinkedRelatedField(
+        view_name='movie-detail',
+        queryset=Watchlist.objects.all(),
+        lookup_field='pk'
+    )
     class Meta:
         model = Review
-        fields= "__all__"
+        fields= ['id', 'movie', 'review_text', 'rating', 'created_at', 'updated_at']
 
 class WatchlistSerializer(serializers.HyperlinkedModelSerializer):
     review = ReviewSerializer(many=True, read_only=True)
@@ -17,7 +22,7 @@ class WatchlistSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Watchlist
-        fields = ['id', 'title', 'genre', 'description', 'active', 'created', 'platforms']
+        fields = ['id', 'title', 'genre', 'description', 'active', 'created', 'platforms', 'review']
 
 
 class StreamPlatformSerializer(serializers.HyperlinkedModelSerializer):
