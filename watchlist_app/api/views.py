@@ -1,10 +1,13 @@
 from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status, generics
+from rest_framework import status, generics, serializers
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+
 from watchlist_app.models import Watchlist, StreamPlatform, Review
 from watchlist_app.api.serializers import WatchlistSerializer, StreamPlatformSerializer, ReviewSerializer
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from watchlist_app.api.permissions import ReviewUserOrReadOnly
+
 
 class ReviewList(generics.ListCreateAPIView):
     serializer_class = ReviewSerializer
@@ -17,13 +20,24 @@ class ReviewList(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         movie_id = self.kwargs['movie_id']
         movie = Watchlist.objects.get(id=movie_id)
-        serializer.save(movie=movie)
+
+        #raise error if user tries to create more than one review for the same movie
+        user = self.request.user
+        if Review.objects.filter(movie=movie, review_user=user).exists():
+            raise serializers.ValidationError("User has already reviewed this movie.")
+        serializer.save(movie=movie, review_user=user)
 
 class ReviewDetail(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Review.objects.all()
+    queryset = Review.objects.all() #this filters by pk 
     serializer_class = ReviewSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [ReviewUserOrReadOnly]
 
+    def get_object(self):
+        # Fetch the review object
+        obj = super().get_object()
+        # Additional checks can be added here if needed
+        return obj
+    
 
 class MovieList(APIView):
     def get(self, request):
