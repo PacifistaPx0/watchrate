@@ -2,20 +2,17 @@ from rest_framework import serializers
 from watchlist_app.models import Watchlist, StreamPlatform, Review
 
 
-class ReviewSerializer(serializers.HyperlinkedModelSerializer):
+class ReviewSerializer(serializers.ModelSerializer):
     review_user = serializers.StringRelatedField(read_only=True)
 
-    movie = serializers.HyperlinkedRelatedField(
-        view_name='movie-detail',
-        queryset=Watchlist.objects.all(),
-        lookup_field='pk'
-    )
     class Meta:
         model = Review
-        fields= ['id', 'movie', 'review_text', 'rating', 'created_at', 'updated_at', 'review_user']
+        fields = ['id', 'review_user', 'rating', 'review_text', 'created_at', 'updated_at']
 
 class WatchlistSerializer(serializers.HyperlinkedModelSerializer):
     reviews = ReviewSerializer(many=True, read_only=True)
+    average_rating = serializers.SerializerMethodField()
+    review_count = serializers.SerializerMethodField()
 
     platforms = serializers.HyperlinkedRelatedField(
         view_name='stream-platform-detail',  
@@ -24,7 +21,13 @@ class WatchlistSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Watchlist
-        fields = ['id', 'title', 'genre', 'description', 'active', 'created', 'platforms', 'reviews']
+        fields = ['id', 'title', 'genre', 'description', 
+                  'active', 'created', 'platforms', 'review_count', 'reviews', 'average_rating']
+        
+    def get_average_rating(self, obj):
+        return obj.calculate_average_rating()
+    def get_review_count(self, obj):
+        return obj.calculate_review_count()
 
 
 class StreamPlatformSerializer(serializers.HyperlinkedModelSerializer):
