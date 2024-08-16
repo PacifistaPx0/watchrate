@@ -2,6 +2,7 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth.models import User
 from django.db.models import Avg, Count
+from django.conf import settings
 
 class StreamPlatform(models.Model):
     name = models.CharField(max_length=50)
@@ -37,7 +38,7 @@ class Watchlist(models.Model):
 
     
 class Review(models.Model):
-    review_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="review_user")
+    review_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="review_user")
     movie = models.ForeignKey(Watchlist, on_delete=models.CASCADE, related_name="reviews")
     review_text = models.TextField()
     rating = models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
