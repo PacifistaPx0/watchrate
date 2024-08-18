@@ -8,7 +8,8 @@ class User(AbstractUser):
     email = models.EmailField(unique=True)
     full_name = models.CharField(max_length=100)
     otp = models.CharField(max_length=6, null=True, blank=True)
-    password = models.CharField(max_length=128)
+    refresh_token = models.CharField(max_length=1000, null=True, blank=True)
+    # password = models.CharField(max_length=128) handling this in serializers 
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']

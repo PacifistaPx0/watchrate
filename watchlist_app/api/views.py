@@ -1,13 +1,78 @@
+import random
 from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, generics, serializers
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, AllowAny
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from watchlist_app.models import Watchlist, StreamPlatform, Review
-from watchlist_app.api.serializers import WatchlistSerializer, StreamPlatformSerializer, ReviewSerializer
+from userauths.models import User, Profile
+from watchlist_app.api.serializers import (WatchlistSerializer, 
+                                           StreamPlatformSerializer, 
+                                           ReviewSerializer, 
+                                           MyTokenObtainPairSerializer,
+                                           RegistrationSerializer,
+                                           UserSerializer)
 from watchlist_app.api.permissions import ReviewUserOrReadOnly
 
+def generate_random_otp(length=6):
+    otp = "".join([str(random.randint(0, 9)) for _ in range(length)])
+    return otp
+
+class PasswordResetEmailVerifyView(generics.RetrieveAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = UserSerializer
+
+    def get_object(self):
+        email = self.kwargs['email'] #api/v1/password-email-verify/example@gmail.com/
+
+        user = User.objects.filter(email=email).first()
+        if user:
+
+            uuid64 = user.pk
+            refresh = RefreshToken.for_user(user) #refresh token for user
+            refresh_token = str(refresh.access_token) #get the access token
+
+            user.refresh_token = refresh_token
+            user.otp = generate_random_otp()
+            user.save()
+
+            link = f"http://localhost:8000/create-new-password/?otp={user.otp}&uuid64={uuid64}&=refresh_token={refresh_token}"
+            print(link)
+
+        return user
+    
+class PasswordChangeView(generics.CreateAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = UserSerializer
+
+    def create(self, request, *args, **kwargs):
+        payload = request.data
+
+        otp = payload['otp']
+        uuid64 = payload['uuid64']
+        password = payload['password']
+
+        user = User.objects.get(id=uuid64, otp=otp)
+        if user:
+            user.set_password(password)
+            user.otp = ""
+            user.save()
+
+            return Response({"message": "Password changed successfully."}, status=status.HTTP_201_CREATED)
+        
+        else:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+class MytokenObtainPairView(TokenObtainPairView):
+    serializer_class = MyTokenObtainPairSerializer
+
+class RegistrationView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = RegistrationSerializer
+    permission_classes = [AllowAny]
 
 class ReviewList(generics.ListCreateAPIView):
     serializer_class = ReviewSerializer
